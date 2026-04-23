@@ -5,6 +5,7 @@
  */
 
 import { EventEmitter } from 'node:events';
+import type Anthropic from '@anthropic-ai/sdk';
 import type { LLMClient, AssetProvider, GameArchetype } from '@swipi/core';
 import { runOrchestration } from './pipeline.js';
 import type { RunEvent, RunState } from './state.js';
@@ -15,11 +16,20 @@ export interface RunManagerOptions {
   llm: LLMClient;
   assetProvider: AssetProvider;
   sharedDir: string;
+  /** Anthropic client used by the Phase 2-6 agent loop. */
+  anthropic: Anthropic;
+  /**
+   * "cheap" routes the agent to Sonnet, "smart" uses Opus for Phase 5.
+   * Defaults to "smart" if omitted at start time.
+   */
+  defaultMode?: 'cheap' | 'smart';
 }
 
 export interface StartRunInput {
   prompt: string;
   archetype?: GameArchetype;
+  /** Per-run override of the manager's default mode. */
+  mode?: 'cheap' | 'smart';
 }
 
 export class RunManager {
@@ -136,6 +146,8 @@ export class RunManager {
       llm: this.options.llm,
       assetProvider: this.options.assetProvider,
       sharedDir: this.options.sharedDir,
+      anthropic: this.options.anthropic,
+      mode: input.mode ?? this.options.defaultMode ?? 'smart',
       emit: (e) => this.emit(runId, e),
     });
 
