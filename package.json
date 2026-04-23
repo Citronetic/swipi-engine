@@ -11,7 +11,9 @@
   },
   "scripts": {
     "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
     "plugin:build": "npm run build --workspace=@swipi/plugin-claude-code",
-    "plugin:verify": "node packages/plugin-claude-code/scripts/verify-plugin.mjs"
+    "plugin:verify": "node packages/plugin-claude-code/scripts/verify-plugin.mjs",
+    "smoke": "node packages/core/scripts/smoke-test.mjs && node packages/api/scripts/smoke-test.mjs"
   }
 }

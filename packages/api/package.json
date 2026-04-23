@@ -1,7 +1,31 @@
 {
   "name": "@swipi/api",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
-  "description": "REST service exposing @swipi/core over HTTP. Streams phase progress via SSE, stores artifacts, and routes Claude Haiku/Sonnet/Opus per phase. Stub — implemented in Phase 3.",
-  "type": "module"
+  "description": "REST service exposing @swipi/core over HTTP. Streams phase progress via SSE, stores artifacts as zip, and routes Claude Haiku/Sonnet/Opus per phase.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "swipi-api": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node dist/cli.js",
+    "dev": "tsx src/cli.ts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@swipi/core": "*",
+    "hono": "^4.6.0",
+    "@hono/node-server": "^1.13.0",
+    "archiver": "^7.0.1"
+  },
+  "devDependencies": {
+    "@types/archiver": "^6.0.3",
+    "@types/node": "^20.14.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.6.0"
+  }
 }

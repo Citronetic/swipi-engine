@@ -4,7 +4,7 @@ Agentic framework for end-to-end web-game creation from a single prompt. A reima
 
 1. **Claude Code plugin** — install into Claude Code, drive game generation with slash commands and skills. (**Phase 1 — delivered.**)
 2. **Core library** — framework-agnostic TypeScript package reused by the plugin, API, and any future client. (**Phase 2 — delivered.**)
-3. **REST API** — programmatic `/generate` endpoint with streaming progress and artifact download. (**Phase 3 — planned.**)
+3. **REST API** — programmatic `/generate` endpoint with streaming progress and artifact download. (**Phase 3a — delivered.** Phases 4–6 of the generation flow scoped to 3b.)
 
 ## Monorepo layout
 
@@ -29,7 +29,12 @@ swipi-engine/
 │   │   ├── src/skills/template-skill/  library-evolution pipeline (ported)
 │   │   ├── src/skills/debug-skill/     debug-protocol pipeline (ported)
 │   │   └── src/workflow/               programmatic 6-phase orchestrator
-│   └── api/                         REST service (Claude + AI SDK)  (stub — Phase 3)
+│   └── api/                         Hono REST service — **Phase 3a delivered**
+│       ├── src/server.ts                createApp() — Hono app factory
+│       ├── src/cli.ts                   swipi-api binary (Node, @hono/node-server)
+│       ├── src/routes/                  /healthz, /generate, /runs/*
+│       ├── src/runs/                    RunManager, RunStorage, pipeline
+│       └── src/providers/               PlaceholderAssetProvider (swap for real)
 ```
 
 ## Install the Claude Code plugin
@@ -54,8 +59,9 @@ See [`docs/MIGRATION_PLAN.md`](docs/MIGRATION_PLAN.md) for the full plan and rat
 | Phase | Deliverable | Status |
 |-------|-------------|--------|
 | 1 | Claude Code plugin (POC) | ✅ |
-| 2 | `@swipi/core` — extract game tools + skill pipelines as a framework-agnostic library | ✅ this commit |
-| 3 | `@swipi/api` — REST service with Vercel AI SDK + Claude + durable workflows | 🚧 stub |
+| 2 | `@swipi/core` — extract game tools + skill pipelines as a framework-agnostic library | ✅ |
+| 3a | `@swipi/api` — Hono REST service: `POST /generate`, SSE, zip artifacts; phases 1–3 of the workflow | ✅ this commit |
+| 3b | Phases 4–6 (assets / config / code / verify) + durable workflow layer + skills endpoints | ⏳ planned |
 | 4 | Integration tests + OpenGame-Bench-style eval harness | ⏳ planned |
 
 ## License

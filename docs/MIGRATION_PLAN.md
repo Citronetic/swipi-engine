@@ -151,7 +151,20 @@ packages/core/
 
 ---
 
-## Phase 3 — `@swipi/api` REST service
+## Phase 3 — `@swipi/api` REST service (**Phase 3a DONE** in current commit)
+
+**Status:** MVP built. Typechecks clean, builds, and passes 16/16 checks in `scripts/smoke-test.mjs` (covers `/healthz`, `POST /generate`, SSE stream, state endpoint, zip artifact download, 404 handling). Phases 1-3 of the game-generation flow (classify → scaffold → GDD) run end-to-end. Phases 4-6 are Phase 3b.
+
+### What landed
+
+- `packages/api/src/server.ts` — Hono app factory (`createApp`) composing health + generate + runs routes.
+- `packages/api/src/cli.ts` — `swipi-api` binary that wires `@hono/node-server`, `AnthropicLLMClient`, `PlaceholderAssetProvider`, and boots the server with env-based config.
+- `packages/api/src/runs/state.ts` — filesystem-backed `RunStorage` (JSON state + NDJSON events + workspace dir + lazy zip).
+- `packages/api/src/runs/manager.ts` — `RunManager` owns lifecycle, EventEmitter-fan-out SSE broadcaster, `subscribe()` that replays historical events then tails live.
+- `packages/api/src/runs/pipeline.ts` — orchestrates phases 1-3 via `@swipi/core`, emits progress events.
+- `packages/api/src/routes/{health,generate,runs}.ts` — the HTTP surface.
+- `packages/api/src/providers/placeholder-assets.ts` — 1×1 PNG + silent WAV stub provider for keyless testing.
+- `packages/api/src/utils/zip.ts` — archiver-based workspace zipper.
 
 **Deliverable:** HTTP service that exposes `@swipi/core` and runs the 6-phase workflow end-to-end using Claude.
 
