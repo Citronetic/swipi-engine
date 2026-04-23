@@ -19,15 +19,15 @@ Then, in an empty directory, drive game generation with slash commands:
 
 | Command | What it does |
 |---|---|
-| `/swipi-new "<game idea>"` | End-to-end: classify → scaffold → GDD → assets → config → code → verify. Drops a playable Phaser project into the current directory. |
-| `/swipi-classify "<game idea>"` | Just returns the archetype (platformer, top_down, grid_logic, tower_defense, ui_heavy) and physics profile. No filesystem changes. |
-| `/swipi-scaffold <archetype>` | Copy the template for a specific archetype into the current directory. No GDD, no asset generation. |
-| `/swipi-verify [--dev]` | Run the pre-build consistency checks and the verify→diagnose→repair loop. Launches `npm run dev` if `--dev` is passed. |
+| `/swipi-engine:swipi-new "<game idea>"` | End-to-end: classify → scaffold → GDD → assets → config → code → verify. Drops a playable Phaser project into the current directory. |
+| `/swipi-engine:swipi-classify "<game idea>"` | Just returns the archetype (platformer, top_down, grid_logic, tower_defense, ui_heavy) and physics profile. No filesystem changes. |
+| `/swipi-engine:swipi-scaffold <archetype>` | Copy the template for a specific archetype into the current directory. No GDD, no asset generation. |
+| `/swipi-engine:swipi-verify [--dev]` | Run the pre-build consistency checks and the verify→diagnose→repair loop. Launches `npm run dev` if `--dev` is passed. |
 
 Example:
 
 ```text
-/swipi-new "Build a Snake clone with WASD controls and a dark theme"
+/swipi-engine:swipi-new "Build a Snake clone with WASD controls and a dark theme"
 ```
 
 When it finishes:

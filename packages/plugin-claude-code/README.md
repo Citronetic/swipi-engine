@@ -42,10 +42,10 @@ Open Claude Code in an empty directory and run any of these:
 
 | Command | What it does |
 |---------|--------------|
-| `/swipi-new "<game idea>"` | Full 6-phase build: classify → scaffold → GDD → assets → config → code → verify. The main flow. |
-| `/swipi-classify "<game idea>"` | Return only the archetype + reasoning. Does not touch the filesystem. |
-| `/swipi-scaffold <archetype>` | Copy the core template + module code + docs for one archetype. Does not generate a GDD or assets. |
-| `/swipi-verify [--dev]` | Run the pre-build checks and verify→diagnose→repair loop on the current project. |
+| `/swipi-engine:swipi-new "<game idea>"` | Full 6-phase build: classify → scaffold → GDD → assets → config → code → verify. The main flow. |
+| `/swipi-engine:swipi-classify "<game idea>"` | Return only the archetype + reasoning. Does not touch the filesystem. |
+| `/swipi-engine:swipi-scaffold <archetype>` | Copy the core template + module code + docs for one archetype. Does not generate a GDD or assets. |
+| `/swipi-engine:swipi-verify [--dev]` | Run the pre-build checks and verify→diagnose→repair loop on the current project. |
 
 The plugin also exposes a proactive subagent, `swipi-debugger`, which Claude will delegate to when a build/test/dev command fails during a session.
 
@@ -78,7 +78,7 @@ plugin-claude-code/
 ## Skill vs. command vs. subagent — when each fires
 
 - **Skills** are loaded when Claude decides they're relevant to the user's message, or when another skill invokes them by name. They are background knowledge — not actions.
-- **Commands** (`/swipi-new`, `/swipi-verify`, …) are user-triggered. They kick off a specific flow and typically invoke one or more skills internally.
+- **Commands** (`/swipi-engine:swipi-new`, `/swipi-engine:swipi-verify`, …) are user-triggered. They kick off a specific flow and typically invoke one or more skills internally.
 - **Subagents** (`swipi-debugger`) run in isolated context. Claude delegates to them proactively — you don't call them directly.
 
 ## Known Phase-1 gaps (fixed in later phases)
