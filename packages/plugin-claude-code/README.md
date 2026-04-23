@@ -4,17 +4,30 @@ A Claude Code plugin that turns a one-line prompt into a playable Phaser web gam
 
 ## Install
 
-From this repo (symlink-based, live-reloads as you edit skills):
+The repository is a Claude Code plugin **marketplace** (see `.claude-plugin/marketplace.json` at the repo root). Install it from inside Claude Code:
 
-```bash
-claude /plugin install ./packages/plugin-claude-code
+```text
+/plugin marketplace add Citronetic/swipi-engine
+/plugin install swipi-engine@swipi-engine
 ```
 
-For a portable distribution directory (symlinks resolved to real copies):
+Alternative — local-path install when developing the plugin itself:
+
+```bash
+git clone git@github.com:Citronetic/swipi-engine.git && cd swipi-engine
+```
+
+Then in Claude Code:
+
+```text
+/plugin install ./packages/plugin-claude-code
+```
+
+For a portable distribution directory (symlinks resolved to real copies, useful for shipping the plugin on its own outside the marketplace):
 
 ```bash
 npm run build --workspace=@swipi/plugin-claude-code
-claude /plugin install ./packages/plugin-claude-code/dist
+# installs ./packages/plugin-claude-code/dist as a self-contained copy
 ```
 
 Verify the plugin structure before installing:
