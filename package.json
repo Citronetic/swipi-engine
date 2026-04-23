@@ -1,0 +1,17 @@
+{
+  "name": "swipi-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agentic framework for end-to-end web-game creation from a prompt — Claude-powered, REST-exposable, and installable as a Claude Code plugin.",
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "plugin:build": "npm run build --workspace=@swipi/plugin-claude-code",
+    "plugin:verify": "node packages/plugin-claude-code/scripts/verify-plugin.mjs"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "name": "@swipi/api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "REST service exposing @swipi/core over HTTP. Streams phase progress via SSE, stores artifacts, and routes Claude Haiku/Sonnet/Opus per phase. Stub — implemented in Phase 3.",
+  "type": "module"
+}

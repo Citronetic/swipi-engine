@@ -1,0 +1,23 @@
+swipi-engine
+Copyright 2026 Citronetic
+
+This product includes software developed as part of:
+
+  OpenGame (https://github.com/leigest519/OpenGame)
+  Copyright 2025 CUHK MMLab and qwen-code / gemini-cli contributors
+  Licensed under the Apache License, Version 2.0.
+
+The following components are derived from OpenGame and carry upstream
+Apache-2.0 headers:
+
+  packages/shared/templates/        (from agent-test/templates/)
+  packages/shared/docs/             (from agent-test/docs/)
+  packages/core/src/tools/          (from packages/core/src/tools/)
+  packages/core/src/utils/          (from packages/core/src/services/)
+  packages/core/src/skills/         (from agent-test/template-skill + debug-skill)
+
+Portions of OpenGame are themselves derived from:
+
+  qwen-code (https://github.com/QwenLM/qwen-code)
+  Google Gemini CLI (https://github.com/google-gemini/gemini-cli)
+  Phaser (https://github.com/phaserjs/phaser)

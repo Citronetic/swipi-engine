@@ -1,0 +1,10 @@
+{
+  "name": "@swipi/plugin-claude-code",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Claude Code plugin that turns a one-line prompt into a playable Phaser web game using the swipi-engine 6-phase workflow.",
+  "scripts": {
+    "build": "node scripts/build-plugin.mjs",
+    "verify": "node scripts/verify-plugin.mjs"
+  }
+}

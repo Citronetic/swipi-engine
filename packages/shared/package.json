@@ -1,0 +1,10 @@
+{
+  "name": "@swipi/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Templates and design documents shared by the Claude Code plugin, core library, and REST API.",
+  "files": [
+    "templates",
+    "docs"
+  ]
+}

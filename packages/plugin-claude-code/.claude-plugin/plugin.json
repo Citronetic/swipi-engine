@@ -1,0 +1,10 @@
+{
+  "name": "swipi-engine",
+  "version": "0.1.0",
+  "description": "Turn a prompt into a playable Phaser web game. Installs the swipi 6-phase workflow, archetype-aware skills, slash commands, and a debug subagent.",
+  "author": {
+    "name": "swipi-engine contributors"
+  },
+  "homepage": "https://github.com/your-org/swipi-engine",
+  "license": "Apache-2.0"
+}
