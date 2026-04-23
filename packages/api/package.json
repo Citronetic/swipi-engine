@@ -17,10 +17,11 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@swipi/core": "*",
-    "hono": "^4.6.0",
+    "@anthropic-ai/sdk": "^0.91.0",
     "@hono/node-server": "^1.13.0",
-    "archiver": "^7.0.1"
+    "@swipi/core": "*",
+    "archiver": "^7.0.1",
+    "hono": "^4.6.0"
   },
   "devDependencies": {
     "@types/archiver": "^6.0.3",
