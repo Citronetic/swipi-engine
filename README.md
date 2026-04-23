@@ -1,79 +1,142 @@
 # swipi-engine
 
-Agentic framework for end-to-end web-game creation from a single prompt. A reimagining of [OpenGame](https://github.com/leigest519/OpenGame) on top of commercial LLMs (Claude) and common agent tooling, with three delivery modes:
+Turn a one-line prompt into a playable Phaser web game. An agentic framework on top of Claude that handles the full pipeline: classify the game → scaffold a project → write a Game Design Document → generate assets → wire config → implement code → verify it builds and runs.
 
-1. **Claude Code plugin** — install into Claude Code, drive game generation with slash commands and skills. (**Phase 1 — delivered.**)
-2. **Core library** — framework-agnostic TypeScript package reused by the plugin, API, and any future client. (**Phase 2 — delivered.**)
-3. **REST API** — programmatic `/generate` endpoint with streaming progress and artifact download. (**Phase 3a — delivered.** Phases 4–6 of the generation flow scoped to 3b.)
+Three ways to use it. Pick whichever fits your workflow.
 
-## Monorepo layout
+---
 
-```
-swipi-engine/
-├── docs/
-│   └── MIGRATION_PLAN.md            Phase 1 → Phase 3 roadmap
-├── packages/
-│   ├── shared/                      Templates & design docs (source of truth)
-│   │   ├── templates/               Phaser scaffolds (core + 5 archetypes)
-│   │   └── docs/                    GDD schema, asset/debug protocols, module manuals
-│   ├── plugin-claude-code/          Claude Code plugin — **Phase 1 POC**
-│   │   ├── .claude-plugin/plugin.json
-│   │   ├── skills/                  SKILL.md files exposed to Claude
-│   │   ├── commands/                Slash commands (/swipi-new, /swipi-verify, ...)
-│   │   ├── agents/                  Subagents (debugger)
-│   │   ├── templates/ -> shared     symlink
-│   │   └── docs/ -> shared          symlink
-│   ├── core/                        Framework-agnostic engine — **Phase 2 delivered**
-│   │   ├── src/llm/                    AnthropicLLMClient, OpenAICompatClient, NoopLLMClient
-│   │   ├── src/tools/                  classifyGame, generateGDD, generateAssets, generateTilemap
-│   │   ├── src/skills/template-skill/  library-evolution pipeline (ported)
-│   │   ├── src/skills/debug-skill/     debug-protocol pipeline (ported)
-│   │   └── src/workflow/               programmatic 6-phase orchestrator
-│   └── api/                         Hono REST service — **Phase 3a delivered**
-│       ├── src/server.ts                createApp() — Hono app factory
-│       ├── src/cli.ts                   swipi-api binary (Node, @hono/node-server)
-│       ├── src/routes/                  /healthz, /generate, /runs/*
-│       ├── src/runs/                    RunManager, RunStorage, pipeline
-│       └── src/providers/               PlaceholderAssetProvider (swap for real)
-```
+## 1. Use it inside Claude Code (plugin)
 
-## Install the Claude Code plugin
-
-Inside Claude Code, add the marketplace and install the plugin:
+Install once from inside Claude Code:
 
 ```text
 /plugin marketplace add Citronetic/swipi-engine
 /plugin install swipi-engine@swipi-engine
 ```
 
-Then inside an empty game directory:
+Then, in an empty directory, drive game generation with slash commands:
+
+| Command | What it does |
+|---|---|
+| `/swipi-new "<game idea>"` | End-to-end: classify → scaffold → GDD → assets → config → code → verify. Drops a playable Phaser project into the current directory. |
+| `/swipi-classify "<game idea>"` | Just returns the archetype (platformer, top_down, grid_logic, tower_defense, ui_heavy) and physics profile. No filesystem changes. |
+| `/swipi-scaffold <archetype>` | Copy the template for a specific archetype into the current directory. No GDD, no asset generation. |
+| `/swipi-verify [--dev]` | Run the pre-build consistency checks and the verify→diagnose→repair loop. Launches `npm run dev` if `--dev` is passed. |
+
+Example:
 
 ```text
 /swipi-new "Build a Snake clone with WASD controls and a dark theme"
 ```
 
-Alternative — local-path install (for plugin development against a clone):
+When it finishes:
 
 ```bash
-git clone git@github.com:Citronetic/swipi-engine.git && cd swipi-engine
-# then in Claude Code:
-/plugin install ./packages/plugin-claude-code
+npm install
+npm run dev        # opens at http://localhost:5173
 ```
 
-See [`packages/plugin-claude-code/README.md`](packages/plugin-claude-code/README.md) for slash commands, skills, and the underlying 6-phase workflow.
+The plugin also exposes a proactive `swipi-debugger` subagent that Claude delegates to automatically when a build or runtime error shows up during a session.
 
-## Phase roadmap
+Full plugin reference: [`packages/plugin-claude-code/README.md`](packages/plugin-claude-code/README.md).
 
-See [`docs/MIGRATION_PLAN.md`](docs/MIGRATION_PLAN.md) for the full plan and rationale.
+---
 
-| Phase | Deliverable | Status |
-|-------|-------------|--------|
-| 1 | Claude Code plugin (POC) | ✅ |
-| 2 | `@swipi/core` — extract game tools + skill pipelines as a framework-agnostic library | ✅ |
-| 3a | `@swipi/api` — Hono REST service: `POST /generate`, SSE, zip artifacts; phases 1–3 of the workflow | ✅ this commit |
-| 3b | Phases 4–6 (assets / config / code / verify) + durable workflow layer + skills endpoints | ⏳ planned |
-| 4 | Integration tests + OpenGame-Bench-style eval harness | ⏳ planned |
+## 2. Use it as a TypeScript library (`@swipi/core`)
+
+Call the game-generation engine directly from your own code — no Claude Code, no agent runtime required.
+
+```bash
+npm install @swipi/core @anthropic-ai/sdk
+```
+
+```typescript
+import path from 'node:path';
+import { AnthropicLLMClient, runClassifyScaffoldGDD } from '@swipi/core';
+
+const result = await runClassifyScaffoldGDD(
+  "Build a Snake clone with WASD controls and a dark theme",
+  {
+    llm: new AnthropicLLMClient({ apiKey: process.env.ANTHROPIC_API_KEY }),
+    sharedDir: path.resolve('./swipi-shared'),   // templates/ + docs/
+    workspaceDir: path.resolve('./games/my-snake'),
+    onPhaseStart: (p) => console.log(`[${p}] start`),
+    onPhaseComplete: (p) => console.log(`[${p}] done`),
+  },
+);
+
+console.log(result.classification.archetype);   // "grid_logic"
+console.log(result.gddPath);                     // "./games/my-snake/GAME_DESIGN.md"
+```
+
+Individual tools are also exposed directly for finer-grained control: `classifyGame`, `generateGDD`, `generateAssets`, `generateTilemap`, plus the Template Skill and Debug Skill evolution pipelines.
+
+The library is provider-agnostic — ship a Claude adapter out of the box, but any `LLMClient` implementation works (OpenRouter, DashScope, local models via the included `OpenAICompatClient`, or your own).
+
+Full library reference: [`packages/core/README.md`](packages/core/README.md).
+
+---
+
+## 3. Use it as a REST service (`@swipi/api`)
+
+Expose the same engine over HTTP — useful for CI pipelines, web UIs, or integrating with other agent platforms.
+
+```bash
+git clone https://github.com/Citronetic/swipi-engine.git
+cd swipi-engine
+npm install
+npm run build --workspaces
+export ANTHROPIC_API_KEY=sk-ant-...
+npm run start --workspace=@swipi/api
+# swipi-api listening on http://0.0.0.0:3000
+```
+
+### Endpoints
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/healthz` | Liveness probe. |
+| `POST` | `/generate` | Start a run. Body: `{ prompt, archetype? }`. Returns `202 { runId, links }`. |
+| `GET` | `/runs/:id` | Current run state (JSON). |
+| `GET` | `/runs/:id/events` | Server-Sent Events stream: phase-start → phase-complete → done. |
+| `GET` | `/runs/:id/artifact.zip` | Download the generated project as a zip. |
+
+### Example
+
+```bash
+# Kick off a run
+curl -s -X POST http://localhost:3000/generate \
+  -H 'Content-Type: application/json' \
+  -d '{"prompt":"A Snake clone with WASD controls and a dark theme"}'
+# → { "runId": "...", "status": "queued", "links": { ... } }
+
+# Tail progress (Ctrl-C after you see kind:"done")
+curl -N http://localhost:3000/runs/<runId>/events
+
+# Download the generated project
+curl -o game.zip http://localhost:3000/runs/<runId>/artifact.zip
+unzip game.zip -d game && cd game && npm install && npm run dev
+```
+
+Full API reference: [`packages/api/README.md`](packages/api/README.md).
+
+---
+
+## Repository layout
+
+```
+swipi-engine/
+├── .claude-plugin/marketplace.json     Claude Code marketplace manifest
+├── packages/
+│   ├── shared/                         Templates and design docs
+│   │   ├── templates/                    Phaser scaffolds — core + 5 archetypes
+│   │   └── docs/                         GDD schema, asset/debug protocols, module manuals
+│   ├── plugin-claude-code/             Claude Code plugin (skills, commands, agent)
+│   ├── core/                           @swipi/core — TypeScript library
+│   └── api/                            @swipi/api — Hono REST service
+```
 
 ## License
 
-Apache-2.0 (inherited from upstream OpenGame assets — see `packages/shared/` license headers).
+Apache-2.0. Derived from [OpenGame](https://github.com/leigest519/OpenGame) (see [`NOTICE`](NOTICE) for upstream attribution).
