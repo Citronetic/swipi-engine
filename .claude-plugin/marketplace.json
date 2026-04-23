@@ -1,0 +1,23 @@
+{
+  "name": "swipi-engine",
+  "owner": {
+    "name": "Citronetic"
+  },
+  "metadata": {
+    "description": "Claude Code plugins for swipi-engine — the agentic framework for end-to-end web-game creation from a prompt.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "swipi-engine",
+      "description": "Turn a prompt into a playable Phaser web game end-to-end. Ships the swipi 6-phase workflow (classify → scaffold → GDD → assets → config → code → verify), archetype-aware skills, slash commands (/swipi-new, /swipi-classify, /swipi-scaffold, /swipi-verify), and a debug subagent.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Citronetic"
+      },
+      "license": "Apache-2.0",
+      "homepage": "https://github.com/Citronetic/swipi-engine",
+      "source": "./packages/plugin-claude-code"
+    }
+  ]
+}

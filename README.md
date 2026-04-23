@@ -39,15 +39,25 @@ swipi-engine/
 
 ## Install the Claude Code plugin
 
-```bash
-# 1. Clone this repo
-git clone <repo> && cd swipi-engine
+Inside Claude Code, add the marketplace and install the plugin:
 
-# 2. Install the plugin into Claude Code (local path install)
-claude /plugin install ./packages/plugin-claude-code
+```text
+/plugin marketplace add Citronetic/swipi-engine
+/plugin install swipi-engine@swipi-engine
+```
 
-# 3. Launch Claude Code inside an empty game directory and run
+Then inside an empty game directory:
+
+```text
 /swipi-new "Build a Snake clone with WASD controls and a dark theme"
+```
+
+Alternative — local-path install (for plugin development against a clone):
+
+```bash
+git clone git@github.com:Citronetic/swipi-engine.git && cd swipi-engine
+# then in Claude Code:
+/plugin install ./packages/plugin-claude-code
 ```
 
 See [`packages/plugin-claude-code/README.md`](packages/plugin-claude-code/README.md) for slash commands, skills, and the underlying 6-phase workflow.
