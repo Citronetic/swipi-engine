@@ -1,13 +1,21 @@
 #!/usr/bin/env node
 /**
- * E2E smoke test — boots the Hono app in-process with a NoopLLMClient and
- * PlaceholderAssetProvider, hits /generate, tails /runs/:id/events,
- * downloads /runs/:id/artifact.zip, and asserts contents.
+ * E2E smoke test — boots the Hono app in-process, hits /generate, tails
+ * SSE, downloads the zip artifact.
  *
- * No ANTHROPIC_API_KEY required — uses the stubbed LLM adapter.
+ * No real API keys needed:
+ *   - NoopLLMClient handles the deterministic classify phase.
+ *   - A fake Anthropic client short-circuits the agent loop (end_turn,
+ *     no tool calls) so the pipeline completes without calling Claude.
+ *   - PlaceholderAssetProvider generates 1x1 PNG stubs.
+ *
+ * What this validates: HTTP surface, SSE stream, state transitions,
+ * artifact packaging, 404 handling. It does NOT validate that the agent
+ * loop actually produces a working game — that requires a real run with
+ * ANTHROPIC_API_KEY against live Claude.
  */
 
-import { mkdtemp, rm, stat } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +26,20 @@ import {
   RunManager,
   PlaceholderAssetProvider,
 } from '../dist/index.js';
+
+// Fake Anthropic client: returns end_turn immediately, no tool calls.
+// Only shape that matters for the agent loop is `messages.create`.
+const fakeAnthropic = {
+  messages: {
+    async create(_req, _opts) {
+      return {
+        content: [{ type: 'text', text: 'No further action needed (smoke stub).' }],
+        stop_reason: 'end_turn',
+        usage: { input_tokens: 10, output_tokens: 5 },
+      };
+    },
+  },
+};
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // Resolve sharedDir from this script's location so the test works
@@ -61,6 +83,8 @@ const manager = new RunManager({
   sharedDir,
   llm,
   assetProvider: new PlaceholderAssetProvider(),
+  anthropic: fakeAnthropic,
+  defaultMode: 'cheap',
 });
 
 const app = createApp({ manager, enableLogger: false });
@@ -123,8 +147,25 @@ try {
     'received classification event',
   );
   check(
-    events.some((e) => e.kind === 'phase-complete' && e.data?.phase === 'gdd'),
-    'received phase-complete for gdd',
+    events.some((e) => e.kind === 'phase-complete' && e.data?.phase === 'classify'),
+    'received phase-complete for classify',
+  );
+  check(
+    events.some((e) => e.kind === 'phase-start' && e.data?.phase === 'scaffold'),
+    'received phase-start for scaffold (agent-loop hand-off)',
+  );
+  // Fake Anthropic returns end_turn immediately with no tool calls,
+  // so the final status payload should reflect iterations=1 and
+  // toolCalls=0 — proves the pipeline reached the agent loop.
+  check(
+    events.some(
+      (e) =>
+        e.kind === 'status' &&
+        e.data?.status === 'succeeded' &&
+        e.data?.agent?.iterations === 1 &&
+        e.data?.agent?.toolCalls === 0,
+    ),
+    'pipeline reached + completed the agent loop (iter=1, tools=0 with fake client)',
   );
   check(
     events.at(-1)?.kind === 'done',
@@ -135,9 +176,13 @@ try {
   const stateRes = await fetch(`${baseUrl}/runs/${runId}`).then((r) => r.json());
   check(stateRes.status === 'succeeded', 'run state.status === succeeded');
   check(stateRes.archetype === 'platformer', 'run state.archetype === platformer');
-  check(stateRes.completedPhases?.length >= 2, 'at least classify+scaffold+gdd in completedPhases');
+  check(
+    Array.isArray(stateRes.completedPhases) && stateRes.completedPhases.includes('classify'),
+    'completedPhases includes "classify"',
+  );
 
-  // 5. Download artifact
+  // 5. Download artifact (workspace is mostly empty with fake agent —
+  //    real runs produce a full scaffolded project).
   const artifactRes = await fetch(`${baseUrl}${links.artifact}`);
   check(artifactRes.status === 200, 'GET /runs/:id/artifact.zip returns 200');
   check(
@@ -145,18 +190,9 @@ try {
     'artifact content-type is application/zip',
   );
   const artifactBuf = await artifactRes.arrayBuffer();
-  check(artifactBuf.byteLength > 500, `artifact has content (${artifactBuf.byteLength} bytes)`);
+  check(artifactBuf.byteLength > 0, `artifact has non-zero bytes (${artifactBuf.byteLength})`);
 
-  // 6. Verify GAME_DESIGN.md was written to workspace
-  const gddPath = join(runsRoot, runId, 'workspace', 'GAME_DESIGN.md');
-  try {
-    const s = await stat(gddPath);
-    check(s.size > 0, `GAME_DESIGN.md written to workspace (${s.size} bytes)`);
-  } catch {
-    check(false, `GAME_DESIGN.md written to workspace`);
-  }
-
-  // 7. Verify 404 on unknown run
+  // 6. Verify 404 on unknown run
   const notFound = await fetch(`${baseUrl}/runs/bogus-id`);
   check(notFound.status === 404, 'GET /runs/bogus-id returns 404');
 } finally {

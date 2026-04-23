@@ -14,7 +14,7 @@ export function generateRoute(manager: RunManager): Hono {
   const app = new Hono();
 
   app.post('/generate', async (c) => {
-    let body: { prompt?: string; archetype?: string };
+    let body: { prompt?: string; archetype?: string; mode?: string };
     try {
       body = await c.req.json();
     } catch {
@@ -38,7 +38,18 @@ export function generateRoute(manager: RunManager): Hono {
       archetype = body.archetype as GameArchetype;
     }
 
-    const state = await manager.start({ prompt: body.prompt, archetype });
+    let mode: 'cheap' | 'smart' | undefined;
+    if (body.mode !== undefined) {
+      if (body.mode !== 'cheap' && body.mode !== 'smart') {
+        return c.json(
+          { error: '`mode` must be "cheap" (Sonnet) or "smart" (Opus) — omit to use server default.' },
+          400,
+        );
+      }
+      mode = body.mode;
+    }
+
+    const state = await manager.start({ prompt: body.prompt, archetype, mode });
     return c.json(
       {
         runId: state.runId,

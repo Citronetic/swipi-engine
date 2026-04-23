@@ -5,20 +5,24 @@
  * Configuration via env vars:
  *   PORT                  HTTP port (default 3000)
  *   HOST                  bind address (default 0.0.0.0)
- *   SWIPI_RUNS_DIR        directory for per-run state + artifacts (default ./.swipi/runs)
- *   SWIPI_SHARED_DIR      directory containing templates/ and docs/ (default ../shared relative to this package)
- *   ANTHROPIC_API_KEY     Claude credentials (required unless you swap LLMClient in embedding mode)
- *   SWIPI_ASSET_PROVIDER  "placeholder" (default) — stubs images; swap in embedding mode for real providers
+ *   SWIPI_RUNS_DIR        per-run state + artifacts (default ./.swipi/runs)
+ *   SWIPI_SHARED_DIR      templates/ + docs/ root (default ../shared of this package)
+ *   SWIPI_MODE            "smart" (default, uses Opus for phase 5) or "cheap" (Sonnet throughout)
+ *   ANTHROPIC_API_KEY     Claude credentials (required)
+ *   SWIPI_ASSET_PROVIDER  "placeholder" (default) or "openai-images" (requires OPENAI_API_KEY)
+ *   OPENAI_API_KEY        Required when SWIPI_ASSET_PROVIDER=openai-images
  */
 
+import Anthropic from '@anthropic-ai/sdk';
 import { serve } from '@hono/node-server';
 import { mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { AnthropicLLMClient } from '@swipi/core';
+import { AnthropicLLMClient, type AssetProvider } from '@swipi/core';
 import { createApp } from './server.js';
 import { RunManager } from './runs/manager.js';
 import { PlaceholderAssetProvider } from './providers/placeholder-assets.js';
+import { OpenAIImageAssetProvider } from './providers/openai-images.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -32,21 +36,34 @@ async function main(): Promise<void> {
     process.env['SWIPI_SHARED_DIR'] ?? resolve(__dirname, '../../shared'),
   );
 
-  if (!process.env['ANTHROPIC_API_KEY']) {
+  const apiKey = process.env['ANTHROPIC_API_KEY'];
+  if (!apiKey) {
     console.error(
       '[swipi-api] ANTHROPIC_API_KEY is not set. Exiting.\n' +
-        '  Either set the env var, or import @swipi/api programmatically and supply your own LLMClient.',
+        '  Either set the env var, or import @swipi/api programmatically with your own Anthropic client.',
     );
     process.exit(1);
   }
 
+  const mode: 'cheap' | 'smart' =
+    process.env['SWIPI_MODE'] === 'cheap' ? 'cheap' : 'smart';
+
+  const providerName = process.env['SWIPI_ASSET_PROVIDER'] ?? 'placeholder';
+  const assetProvider: AssetProvider =
+    providerName === 'openai-images'
+      ? new OpenAIImageAssetProvider()
+      : new PlaceholderAssetProvider();
+
   await mkdir(runsRoot, { recursive: true });
 
+  const anthropic = new Anthropic({ apiKey });
   const manager = new RunManager({
     runsRoot,
     sharedDir,
-    llm: new AnthropicLLMClient({ apiKey: process.env['ANTHROPIC_API_KEY'] }),
-    assetProvider: new PlaceholderAssetProvider(),
+    llm: new AnthropicLLMClient({ apiKey }),
+    assetProvider,
+    anthropic,
+    defaultMode: mode,
   });
 
   const app = createApp({ manager });
